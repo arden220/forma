@@ -6,6 +6,45 @@ import { useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import * as stdlib from 'three-stdlib'
 
+interface Shape {
+  id: number
+  type: string
+  position: [number, number, number]
+  color: string
+  wireframe: boolean
+  size: number
+  metalness: number
+  roughness: number
+  isSelected: boolean
+  deformationType: string
+  deformationStrength: number
+  effectType: string
+  effectIntensity: number
+  onClick: () => void
+  onPositionChange: (position: [number, number, number]) => void
+  animationEnabled: boolean
+  colorShiftEnabled: boolean
+  noiseIntensity: number
+  glowIntensity: number
+  rotation: [number, number, number]
+  scale: [number, number, number]
+  materialType: string
+  textureType: string
+  normalMapEnabled: boolean
+  roughnessMapEnabled: boolean
+  metalnessMapEnabled: boolean
+  displacementMapEnabled: boolean
+  emissiveMapEnabled: boolean
+  animationSpeed: number
+  content?: string
+  font?: string
+  mode?: string
+  exportable?: boolean
+  colorMode?: string
+  gradientColors?: string[]
+  gradientType?: string
+}
+
 function Shape({ 
   type, 
   position, 
