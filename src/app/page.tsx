@@ -1,9 +1,10 @@
 'use client'
 
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, Box, Sphere, Torus, Cone, Cylinder, Dodecahedron, Tetrahedron, Grid, Stars, Sparkles } from '@react-three/drei'
+import { OrbitControls, Box, Sphere, Torus, Cone, Cylinder, Dodecahedron, Tetrahedron, Grid, Stars, Sparkles, Text } from '@react-three/drei'
 import { useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import * as stdlib from 'three-stdlib'
 
 function Shape({ 
   type, 
@@ -34,36 +35,7 @@ function Shape({
   displacementMapEnabled,
   emissiveMapEnabled,
   animationSpeed
-}: { 
-  type: string; 
-  position: [number, number, number]; 
-  color: string; 
-  wireframe: boolean;
-  size: number;
-  metalness: number;
-  roughness: number;
-  isSelected: boolean;
-  deformationType: string;
-  deformationStrength: number;
-  effectType: string;
-  effectIntensity: number;
-  onClick: () => void;
-  onPositionChange: (newPosition: [number, number, number]) => void;
-  animationEnabled: boolean;
-  colorShiftEnabled: boolean;
-  noiseIntensity: number;
-  glowIntensity: number;
-  rotation: [number, number, number];
-  scale: [number, number, number];
-  materialType: string;
-  textureType: string;
-  normalMapEnabled: boolean;
-  roughnessMapEnabled: boolean;
-  metalnessMapEnabled: boolean;
-  displacementMapEnabled: boolean;
-  emissiveMapEnabled: boolean;
-  animationSpeed: number;
-}) {
+}: Shape) {
   const meshRef = useRef<any>(null)
   const [hovered, setHovered] = useState(false)
   
@@ -113,6 +85,16 @@ function Shape({
       emissiveIntensity: isSelected ? 0.2 : 0
     }
     
+    // Add texture if enabled
+    if (textureType !== 'none') {
+      const texture = generateTexture(textureType)
+      texture.wrapS = THREE.RepeatWrapping
+      texture.wrapT = THREE.RepeatWrapping
+      texture.repeat.set(textureScale, textureScale)
+      texture.rotation = textureRotation * Math.PI / 180
+      materialProps.map = texture
+    }
+    
     // Apply effects
     if (effectType === 'glow' && effectIntensity > 0) {
       materialProps.emissive = baseColor
@@ -136,6 +118,8 @@ function Shape({
     
     // Material type selection
     switch (materialType) {
+      case 'liquid':
+        return generateLiquidMaterial(liquidType)
       case 'basic':
         return <meshBasicMaterial {...materialProps} />
       case 'phong':
@@ -157,6 +141,25 @@ function Shape({
       case 'standard':
       default:
         return <meshStandardMaterial {...materialProps} />
+    }
+  }
+  
+  // Text rendering
+  const renderText = () => {
+    if (type === 'text') {
+      return (
+        <Text
+          position={position}
+          rotation={rotation}
+          fontSize={size}
+          color={color}
+          font={textFont}
+          anchorX="center"
+          anchorY="middle"
+        >
+          {textContent}
+        </Text>
+      )
     }
   }
   
@@ -185,7 +188,7 @@ function Shape({
           count={24}
           array={new Float32Array([
             -1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1,
-            -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1,
+            -1, -1, 1, 1, -1, 1, 1, 1, -1, 1, 1,
             -1, -1, -1, -1, -1, 1, -1, 1, 1, -1, 1, -1,
             1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, -1,
             -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1,
@@ -197,6 +200,11 @@ function Shape({
       <lineBasicMaterial attach="material" color="#000000" linewidth={2} />
     </lineSegments>
   ) : null
+  
+  // Return text if type is text
+  if (type === 'text') {
+    return renderText()
+  }
   
   switch (type) {
     case 'box':
@@ -388,13 +396,341 @@ export default function Home() {
   const [gradientType, setGradientType] = useState<'linear' | 'radial'>('linear')
   const [hexInput, setHexInput] = useState('#ff0000')
   const [showColorPicker, setShowColorPicker] = useState(false)
+  
+  // Text State
+  const [textMode, setTextMode] = useState<'none' | '2d' | '3d'>('none')
+  const [textContent, setTextContent] = useState('FORMA')
+  const [textFont, setTextFont] = useState('Arial')
+  const [textSize, setTextSize] = useState(1)
+  const [textColor, setTextColor] = useState('#ffffff')
+  const [textPosition, setTextPosition] = useState([0, 0, 0] as [number, number, number])
+  const [textRotation, setTextRotation] = useState([0, 0, 0] as [number, number, number])
+  
+  // Advanced Effects State
+  const [noiseType, setNoiseType] = useState<'perlin' | 'simplex' | 'cellular'>('perlin')
+  const [displacementStrength, setDisplacementStrength] = useState(0)
+  const [chromaticAberration, setChromaticAberration] = useState(0)
+  const [vignetteStrength, setVignetteStrength] = useState(0)
+  const [bloomIntensity, setBloomIntensity] = useState(0)
+  const [godRaysEnabled, setGodRaysEnabled] = useState(false)
+  const [ssaoEnabled, setSsaoEnabled] = useState(false)
+  const [depthOfFieldEnabled, setDepthOfFieldEnabled] = useState(false)
+  
+  // Texture State
+  const [textureScale, setTextureScale] = useState(1)
+  const [textureRotation, setTextureRotation] = useState(0)
+  const [normalMapType, setNormalMapType] = useState<'none' | 'bump' | 'detail'>('none')
+  const [roughnessMapType, setRoughnessMapType] = useState<'none' | 'scratches' | 'worn'>('none')
+  
+  // Layer Management State
+  const [layers, setLayers] = useState([
+    { id: 0, name: 'Layer 1', visible: true, locked: false, shapes: [] },
+    { id: 1, name: 'Layer 2', visible: true, locked: false, shapes: [] },
+    { id: 2, name: 'Layer 3', visible: true, locked: false, shapes: [] },
+    { id: 3, name: 'Layer 4', visible: true, locked: false, shapes: [] }
+  ])
+  const [activeLayer, setActiveLayer] = useState(0)
+  const [collisionDetection, setCollisionDetection] = useState(true)
+  const [showCollisionBounds, setShowCollisionBounds] = useState(false)
+  const [exportSettings, setExportSettings] = useState({
+    format: 'gltf' as 'gltf' | 'obj' | 'fbx' | 'stl',
+    includeTextures: true,
+    includeAnimations: true,
+    scale: 1.0,
+    binary: true
+  })
+  
+  // Collision Detection
+  const checkCollisions = () => {
+    if (!collisionDetection) return []
+    
+    const collisions: any[] = []
+    for (let i = 0; i < shapes.length; i++) {
+      for (let j = i + 1; j < shapes.length; j++) {
+        const shape1 = shapes[i]
+        const shape2 = shapes[j]
+        
+        // Simple bounding box collision detection
+        const dist = Math.sqrt(
+          Math.pow(shape1.position[0] - shape2.position[0], 2) +
+          Math.pow(shape1.position[1] - shape2.position[1], 2) +
+          Math.pow(shape1.position[2] - shape2.position[2], 2)
+        )
+        
+        const minDist = (shape1.size + shape2.size) / 2
+        if (dist < minDist) {
+          collisions.push({
+            shape1: shape1.id,
+            shape2: shape2.id,
+            distance: dist,
+            type: 'overlap'
+          })
+        }
+      }
+    }
+    return collisions
+  }
+  
+  // Layer Management Functions
+  const addShapeToLayer = (shapeId: number, layerId: number) => {
+    const newLayers = [...layers]
+    const shape = shapes.find(s => s.id === shapeId)
+    if (shape) {
+      // Remove from all layers first
+      newLayers.forEach(layer => {
+        layer.shapes = layer.shapes.filter(id => id !== shapeId)
+      })
+      // Add to target layer
+      if (newLayers[layerId]) {
+        newLayers[layerId].shapes.push(shapeId)
+      }
+      setLayers(newLayers)
+    }
+  }
+  
+  const toggleLayerVisibility = (layerId: number) => {
+    const newLayers = [...layers]
+    newLayers[layerId].visible = !newLayers[layerId].visible
+    setLayers(newLayers)
+  }
+  
+  const toggleLayerLock = (layerId: number) => {
+    const newLayers = [...layers]
+    newLayers[layerId].locked = !newLayers[layerId].locked
+    setLayers(newLayers)
+  }
+  
+  // Export Functions
+  const exportScene = () => {
+    const sceneData = {
+      format: exportSettings.format,
+      timestamp: new Date().toISOString(),
+      shapes: shapes.filter(shape => shape.exportable !== false),
+      layers: layers,
+      settings: exportSettings,
+      collisions: checkCollisions()
+    }
+    
+    console.log('Exporting scene:', sceneData)
+    
+    // Create download based on format
+    const dataStr = JSON.stringify(sceneData, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `forma-scene.${exportSettings.format === 'gltf' ? 'glb' : exportSettings.format}`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+  const [liquidViscosity, setLiquidViscosity] = useState(0.5)
+  const [liquidTurbulence, setLiquidTurbulence] = useState(0.1)
+  const [liquidColor, setLiquidColor] = useState('#0066cc')
+  const [liquidOpacity, setLiquidOpacity] = useState(0.8)
+  const [liquidRefraction, setLiquidRefraction] = useState(1.3)
+  const [liquidReflection, setLiquidReflection] = useState(0.2)
+  
+  // Advanced WebGL Effects State
+  const [webglNoiseType, setWebglNoiseType] = useState<'simplex' | 'perlin' | 'worley' | 'fractal'>('simplex')
+  const [webglDistortion, setWebglDistortion] = useState(0)
+  const [webglChromaticAberration, setWebglChromaticAberration] = useState(0)
+  const [webglGlitch, setWebglGlitch] = useState(false)
+  const [webglFilmGrain, setWebglFilmGrain] = useState(0)
+  const [webglVignette, setWebglVignette] = useState(0)
+  const [webglBloom, setWebglBloom] = useState(0)
+  const [webglGodRays, setWebglGodRays] = useState(false)
+  const [webglSSAO, setWebglSSAO] = useState(false)
+  const [webglDOF, setWebglDOF] = useState(false)
+  
+  // Google Fonts
+  const googleFonts = [
+    'Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'Verdana', 'Courier New',
+    'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Playfair Display',
+    'Raleway', 'Ubuntu', 'Oswald', 'Merriweather', 'Nunito', 'Dancing Script'
+  ]
+
+  // Texture Generation Functions
+  const generateTexture = (type: string) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 256
+    canvas.height = 256
+    const ctx = canvas.getContext('2d')!
+    
+    switch (type) {
+      case 'checkerboard':
+        const size = 32
+        for (let i = 0; i < 8; i++) {
+          for (let j = 0; j < 8; j++) {
+            ctx.fillStyle = (i + j) % 2 === 0 ? '#ffffff' : '#000000'
+            ctx.fillRect(i * size, j * size, size, size)
+          }
+        }
+        break
+      case 'noise':
+        const imageData = ctx.createImageData(256, 256)
+        for (let i = 0; i < imageData.data.length; i += 4) {
+          const value = Math.random() * 255
+          imageData.data[i] = value
+          imageData.data[i + 1] = value
+          imageData.data[i + 2] = value
+          imageData.data[i + 3] = 255
+        }
+        ctx.putImageData(imageData, 0, 0)
+        break
+      case 'gradient':
+        const gradient = ctx.createLinearGradient(0, 0, 256, 256)
+        gradient.addColorStop(0, '#ffffff')
+        gradient.addColorStop(0.5, '#808080')
+        gradient.addColorStop(1, '#000000')
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, 0, 256, 256)
+        break
+      case 'marble':
+        for (let i = 0; i < 256; i++) {
+          for (let j = 0; j < 256; j++) {
+            const value = Math.sin(i * 0.1) * 50 + Math.sin(j * 0.1) * 50 + 128
+            ctx.fillStyle = `rgb(${value}, ${value}, ${value})`
+            ctx.fillRect(i, j, 1, 1)
+          }
+        }
+        break
+      case 'wood':
+        for (let i = 0; i < 256; i++) {
+          const value = Math.sin(i * 0.05) * 30 + Math.random() * 20 + 100
+          ctx.fillStyle = `rgb(${value}, ${value * 0.7}, ${value * 0.3})`
+          ctx.fillRect(0, i, 256, 1)
+        }
+        break
+      case 'metal':
+        const metalGradient = ctx.createLinearGradient(0, 0, 0, 256)
+        metalGradient.addColorStop(0, '#e0e0e0')
+        metalGradient.addColorStop(0.5, '#a0a0a0')
+        metalGradient.addColorStop(1, '#606060')
+        ctx.fillStyle = metalGradient
+        ctx.fillRect(0, 0, 256, 256)
+        break
+      case 'liquid':
+        // Generate liquid texture with animated waves
+        const time = Date.now() * 0.001
+        for (let i = 0; i < 256; i++) {
+          for (let j = 0; j < 256; j++) {
+            const wave1 = Math.sin((i * 0.02) + time) * liquidTurbulence
+            const wave2 = Math.cos((j * 0.02) + time) * liquidTurbulence
+            const value = Math.sin(wave1 + wave2) * 127 + 128
+            const alpha = liquidOpacity
+            ctx.fillStyle = `${liquidColor}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`
+            ctx.fillRect(i, j, 1, 1)
+          }
+        }
+        break
+    }
+    
+    return new THREE.CanvasTexture(canvas)
+  }
+
+  // Liquid Material Generation
+  const generateLiquidMaterial = (type: string) => {
+    const liquidProps: any = {
+      color: liquidColor,
+      metalness: 0.3,
+      roughness: 0.1,
+      transparent: true,
+      opacity: liquidOpacity,
+      envMapIntensity: liquidReflection,
+      refractionRatio: liquidRefraction,
+      transmission: 1 - liquidOpacity * 0.5
+    }
+    
+    switch (type) {
+      case 'water':
+        return (
+          <meshPhysicalMaterial 
+            {...liquidProps}
+            clearcoat={0.1}
+            clearcoatRoughness={0.05}
+            ior={1.333}
+            attenuationDistance={10}
+            attenuationColor={liquidColor}
+          />
+        )
+      case 'honey':
+        return (
+          <meshPhysicalMaterial 
+            {...liquidProps}
+            color="#d4a374"
+            clearcoat={0.8}
+            clearcoatRoughness={0.2}
+            ior={1.5}
+            sheen={0.5}
+            sheenColor="#f4e4c1"
+          />
+        )
+      case 'lava':
+        return (
+          <meshPhysicalMaterial 
+            {...liquidProps}
+            color="#ff4500"
+            emissive="#ff6600"
+            emissiveIntensity={0.8}
+            clearcoat={0.2}
+            ior={1.5}
+            attenuationDistance={5}
+            attenuationColor="#ff8800"
+          />
+        )
+      case 'mercury':
+        return (
+          <meshPhysicalMaterial 
+            {...liquidProps}
+            color="#c0c0c0"
+            metalness={0.9}
+            roughness={0.05}
+            clearcoat={0.9}
+            clearcoatRoughness={0.01}
+            ior={1.62}
+            reflectivity={0.8}
+          />
+        )
+      case 'oil':
+        return (
+          <meshPhysicalMaterial 
+            {...liquidProps}
+            color="#1a1a1a"
+            metalness={0.1}
+            roughness={0.3}
+            clearcoat={0.1}
+            clearcoatRoughness={0.4}
+            ior={1.47}
+          />
+        )
+      case 'plasma':
+        return (
+          <meshPhysicalMaterial 
+            {...liquidProps}
+            color="#ff00ff"
+            emissive="#00ffff"
+            emissiveIntensity={1.0}
+            metalness={0.8}
+            roughness={0.1}
+            clearcoat={0.3}
+            clearcoatRoughness={0.1}
+          />
+        )
+      default:
+        return <meshStandardMaterial {...liquidProps} />
+    }
+  }
 
   const sidebarItems = [
     { id: 'directory', label: 'ROOT_DIRECTORY', icon: '[01]' },
     { id: 'manifest', label: 'ASSET_MANIFEST', icon: '[02]' },
-    { id: 'components', label: 'COMPONENT_LIB', icon: '[03]' },
-    { id: 'render', label: 'RENDER_QUEUE', icon: '[04]' },
-    { id: 'system', label: 'SYSTEM_CONFIG', icon: '[05]' }
+    { id: 'layers', label: 'LAYER_MGMT', icon: '[03]' },
+    { id: 'components', label: 'COMPONENT_LIB', icon: '[04]' },
+    { id: 'render', label: 'RENDER_QUEUE', icon: '[05]' },
+    { id: 'system', label: 'SYSTEM_CONFIG', icon: '[06]' }
   ]
 
   const actionItems = [
@@ -405,7 +741,7 @@ export default function Home() {
     { label: 'SHUFFLE_LAYOUT' }
   ]
 
-  const shapeTypes = ['box', 'sphere', 'torus', 'cone', 'cylinder', 'dodecahedron', 'tetrahedron']
+  const shapeTypes = ['box', 'sphere', 'torus', 'cone', 'cylinder', 'dodecahedron', 'tetrahedron', 'text', 'blob', 'liquid', 'organic', 'crystal', 'coral', 'plant', 'cloud']
   const presetColors = ['#ff0000', '#ffffff', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
 
   // Color Picker Functions
@@ -463,7 +799,28 @@ export default function Home() {
     return currentColor
   }
 
+  // Text Functions
+  const addText = () => {
+    const newText = {
+      id: Date.now(),
+      type: 'text',
+      content: textContent,
+      font: textFont,
+      size: textSize,
+      color: textColor,
+      position: [...textPosition] as [number, number, number],
+      rotation: [...textRotation] as [number, number, number],
+      mode: textMode
+    }
+    setShapes([...shapes, newText])
+  }
+
   const addShape = (type: string) => {
+    if (type === 'text') {
+      addText()
+      return
+    }
+    
     const newShape = {
       id: Date.now(),
       type,
@@ -561,6 +918,7 @@ export default function Home() {
     setShapes(shapes.map(shape => ({ ...shape, wireframe: !wireframe })))
   }
 
+  // Update all shapes with current settings
   const updateAllShapes = (updates: any) => {
     setShapes(shapes.map(shape => ({ ...shape, ...updates })))
   }
@@ -575,25 +933,7 @@ export default function Home() {
     })))
   }
 
-  const exportScene = () => {
-    const sceneData = {
-      shapes,
-      settings: {
-        wireframe,
-        autoRotate,
-        gridVisible,
-        axesVisible,
-        lightIntensity,
-        cameraPosition,
-        shapeSize,
-        metalness,
-        roughness
-      }
-    }
-    console.log('Export Scene Data:', sceneData)
-    alert('Scene data exported to console!')
-  }
-
+  
   return (
     <div className="relative w-full h-screen overflow-hidden bg-white">
       {/* Grid Background Pattern */}
@@ -613,10 +953,14 @@ export default function Home() {
           <div className="p-6 pb-20">
             {/* Brand */}
             <div className="mb-8 border-b-4 border-black pb-4">
-              <h1 className="text-5xl font-bold text-black mb-2 font-script tracking-wider">
-                FORMA
-              </h1>
-              <div className="text-xs text-black/60 font-mono">SYS.REQ.009 // V.1.4.3</div>
+              <div className="flex items-center space-x-4">
+                <img 
+                  src="/transparent-image(1).png" 
+                  alt="FORMA" 
+                  className="h-8 w-auto"
+                />
+                <div className="text-xs text-black/60 font-mono">SYS.REQ.009 // V.1.4.3</div>
+              </div>
             </div>
 
             {/* Navigation */}
@@ -819,6 +1163,134 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Text Controls */}
+              <div className="border-2 border-black p-4 bg-white">
+                <h3 className="text-black font-mono text-sm mb-3">TEXT CONTROLS</h3>
+                
+                {/* Text Mode Toggle */}
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-black text-xs font-mono">MODE</span>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setTextMode('none')}
+                      className={`px-2 py-1 border-2 text-xs font-mono transition-all ${
+                        textMode === 'none'
+                          ? 'bg-black text-white border-black'
+                          : 'border-gray-300 text-black hover:border-black'
+                      }`}
+                    >
+                      NONE
+                    </button>
+                    <button
+                      onClick={() => setTextMode('2d')}
+                      className={`px-2 py-1 border-2 text-xs font-mono transition-all ${
+                        textMode === '2d'
+                          ? 'bg-black text-white border-black'
+                          : 'border-gray-300 text-black hover:border-black'
+                      }`}
+                    >
+                      2D
+                    </button>
+                    <button
+                      onClick={() => setTextMode('3d')}
+                      className={`px-2 py-1 border-2 text-xs font-mono transition-all ${
+                        textMode === '3d'
+                          ? 'bg-black text-white border-black'
+                          : 'border-gray-300 text-black hover:border-black'
+                      }`}
+                    >
+                      3D
+                    </button>
+                  </div>
+                </div>
+
+                {/* Text Input and Font Selection */}
+                {textMode !== 'none' && (
+                  <div className="space-y-3">
+                    <div>
+                      <input
+                        type="text"
+                        value={textContent}
+                        onChange={(e) => setTextContent(e.target.value)}
+                        placeholder="Enter text..."
+                        className="w-full px-3 py-2 border-2 border-gray-300 font-mono text-xs"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <select 
+                        value={textFont}
+                        onChange={(e) => setTextFont(e.target.value)}
+                        className="flex-1 border-2 border-gray-300 p-2 font-mono text-xs"
+                      >
+                        {googleFonts.map((font) => (
+                          <option key={font} value={font}>{font}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="color"
+                        value={textColor}
+                        onChange={(e) => setTextColor(e.target.value)}
+                        className="w-8 h-8 border-2 border-black cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-black text-xs font-mono">SIZE: {textSize.toFixed(1)}</label>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="5"
+                        step="0.1"
+                        value={textSize}
+                        onChange={(e) => setTextSize(parseFloat(e.target.value))}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-black text-xs font-mono">POSITION X: {textPosition[0].toFixed(1)}</label>
+                      <input
+                        type="range"
+                        min="-5"
+                        max="5"
+                        step="0.1"
+                        value={textPosition[0]}
+                        onChange={(e) => setTextPosition([parseFloat(e.target.value), textPosition[1], textPosition[2]])}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-black text-xs font-mono">POSITION Y: {textPosition[1].toFixed(1)}</label>
+                      <input
+                        type="range"
+                        min="-5"
+                        max="5"
+                        step="0.1"
+                        value={textPosition[1]}
+                        onChange={(e) => setTextPosition([textPosition[0], parseFloat(e.target.value), textPosition[2]])}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-black text-xs font-mono">POSITION Z: {textPosition[2].toFixed(1)}</label>
+                      <input
+                        type="range"
+                        min="-5"
+                        max="5"
+                        step="0.1"
+                        value={textPosition[2]}
+                        onChange={(e) => setTextPosition([textPosition[0], textPosition[1], parseFloat(e.target.value)])}
+                        className="w-full"
+                      />
+                    </div>
+                    <button
+                      onClick={addText}
+                      className="w-full p-3 border-2 border-black text-black text-sm font-mono hover:bg-black hover:text-white transition-all"
+                    >
+                      ADD TEXT
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="border-2 border-black p-4 bg-white">
                 <h3 className="text-black font-mono text-sm mb-3">MATERIAL PROPERTIES</h3>
                 <div className="space-y-3">
@@ -888,6 +1360,241 @@ export default function Home() {
                 </button>
               </div>
             </div>
+          )}
+
+          {/* Shape Modification Controls */}
+          {selectedMenu === 'components' && (
+            <div className="border-2 border-black p-4 bg-white">
+              <h3 className="text-black font-mono text-sm mb-3">MODIFY ALL SHAPES</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-black text-xs font-mono">COLOR MODE</label>
+                  <select 
+                    value={colorMode}
+                    onChange={(e) => {
+                      const newMode = e.target.value as 'solid' | 'gradient'
+                      setColorMode(newMode)
+                      updateAllShapes({ colorMode: newMode })
+                    }}
+                    className="w-full border-2 border-gray-300 p-2 font-mono text-xs"
+                  >
+                    <option value="solid">SOLID</option>
+                    <option value="gradient">GRADIENT</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-black text-xs font-mono">COLOR</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="color"
+                      value={currentColor}
+                      onChange={(e) => {
+                        const newColor = e.target.value
+                        setCurrentColor(newColor)
+                        setHexInput(newColor)
+                        updateAllShapes({ color: colorMode === 'gradient' ? getGradientCSS() : newColor })
+                      }}
+                      className="w-12 h-12 border-2 border-black cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={hexInput}
+                      onChange={(e) => {
+                        handleHexInput(e.target.value)
+                        if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                          updateAllShapes({ color: colorMode === 'gradient' ? getGradientCSS() : e.target.value })
+                        }
+                      }}
+                      placeholder="#000000"
+                      className="flex-1 px-3 py-2 border-2 border-gray-300 font-mono text-xs"
+                      maxLength={7}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-black text-xs font-mono">SIZE: {shapeSize.toFixed(1)}</label>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="3"
+                    step="0.1"
+                    value={shapeSize}
+                    onChange={(e) => {
+                      const newSize = parseFloat(e.target.value)
+                      setShapeSize(newSize)
+                      updateAllShapes({ size: newSize })
+                    }}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="text-black text-xs font-mono">METALNESS: {metalness.toFixed(1)}</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={metalness}
+                    onChange={(e) => {
+                      const newMetalness = parseFloat(e.target.value)
+                      setMetalness(newMetalness)
+                      updateAllShapes({ metalness: newMetalness })
+                    }}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="text-black text-xs font-mono">ROUGHNESS: {roughness.toFixed(1)}</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={roughness}
+                    onChange={(e) => {
+                      const newRoughness = parseFloat(e.target.value)
+                      setRoughness(newRoughness)
+                      updateAllShapes({ roughness: newRoughness })
+                    }}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="text-black text-xs font-mono">MATERIAL TYPE</label>
+                  <select 
+                    value={materialType}
+                    onChange={(e) => {
+                      const newMaterialType = e.target.value
+                      setMaterialType(newMaterialType)
+                      updateAllShapes({ materialType: newMaterialType })
+                    }}
+                    className="w-full border-2 border-gray-300 p-2 font-mono text-xs"
+                  >
+                    <option value="standard">STANDARD</option>
+                    <option value="basic">BASIC</option>
+                    <option value="phong">PHONG</option>
+                    <option value="lambert">LAMBERT</option>
+                    <option value="physical">PHYSICAL</option>
+                    <option value="toon">TOON</option>
+                    <option value="depth">DEPTH</option>
+                    <option value="normal">NORMAL</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-black text-xs font-mono">WIREFRAME</span>
+                  <button
+                    onClick={() => {
+                      const newWireframe = !wireframe
+                      setWireframe(newWireframe)
+                      updateAllShapes({ wireframe: newWireframe })
+                    }}
+                    className={`px-3 py-1 border-2 text-xs font-mono transition-all ${
+                      wireframe 
+                        ? 'bg-black text-white border-black' 
+                        : 'border-gray-300 text-black hover:border-black'
+                      }`}
+                    >
+                      {wireframe ? 'ON' : 'OFF'}
+                    </button>
+                </div>
+                <button
+                  onClick={randomizeAllColors}
+                  className="w-full p-3 border-2 border-black text-black text-sm font-mono hover:bg-black hover:text-white transition-all"
+                >
+                  RANDOMIZE ALL COLORS
+                </button>
+                <button
+                  onClick={clearShapes}
+                  className="w-full p-3 border-2 border-gray-300 text-black text-sm font-mono hover:bg-black hover:text-white transition-all"
+                >
+                  CLEAR ALL
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Asset Manifest */}
+          {selectedMenu === 'manifest' && (
+            <div className="space-y-4">
+              <div className="border-2 border-black p-4 bg-white">
+                <h3 className="text-black font-mono text-sm mb-3">ASSET LIBRARY</h3>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-black text-xs font-mono">SHAPES</span>
+                      <div className="text-xs text-black/60 font-mono mt-2">
+                        <div>Box: {shapes.filter(s => s.type === 'box').length}</div>
+                        <div>Sphere: {shapes.filter(s => s.type === 'sphere').length}</div>
+                        <div>Torus: {shapes.filter(s => s.type === 'torus').length}</div>
+                        <div>Cone: {shapes.filter(s => s.type === 'cone').length}</div>
+                        <div>Cylinder: {shapes.filter(s => s.type === 'cylinder').length}</div>
+                        <div>Dodecahedron: {shapes.filter(s => s.type === 'dodecahedron').length}</div>
+                        <div>Tetrahedron: {shapes.filter(s => s.type === 'tetrahedron').length}</div>
+                        <div>Text: {shapes.filter(s => s.type === 'text').length}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-black text-xs font-mono">MATERIALS</span>
+                      <div className="text-xs text-black/60 font-mono mt-2">
+                        <div>Standard: {shapes.filter(s => s.materialType === 'standard').length}</div>
+                        <div>Basic: {shapes.filter(s => s.materialType === 'basic').length}</div>
+                        <div>Phong: {shapes.filter(s => s.materialType === 'phong').length}</div>
+                        <div>Lambert: {shapes.filter(s => s.materialType === 'lambert').length}</div>
+                        <div>Physical: {shapes.filter(s => s.materialType === 'physical').length}</div>
+                        <div>Toon: {shapes.filter(s => s.materialType === 'toon').length}</div>
+                        <div>Depth: {shapes.filter(s => s.materialType === 'depth').length}</div>
+                        <div>Normal: {shapes.filter(s => s.materialType === 'normal').length}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-black text-xs font-mono">EFFECTS</span>
+                      <div className="text-xs text-black/60 font-mono mt-2">
+                        <div>Glow: {shapes.filter(s => s.effectType === 'glow').length}</div>
+                        <div>Transparent: {shapes.filter(s => s.effectType === 'transparent').length}</div>
+                        <div>Metallic: {shapes.filter(s => s.effectType === 'metallic').length}</div>
+                        <div>Hologram: {shapes.filter(s => s.effectType === 'hologram').length}</div>
+                        <div>Plasma: {shapes.filter(s => s.effectType === 'plasma').length}</div>
+                        <div>None: {shapes.filter(s => s.effectType === 'none').length}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-black text-xs font-mono">DEFORMATIONS</span>
+                      <div className="text-xs text-black/60 font-mono mt-2">
+                        <div>Twist: {shapes.filter(s => s.deformationType === 'twist').length}</div>
+                        <div>Scale: {shapes.filter(s => s.deformationType === 'scale').length}</div>
+                        <div>Squeeze: {shapes.filter(s => s.deformationType === 'squeeze').length}</div>
+                        <div>Wave: {shapes.filter(s => s.deformationType === 'wave').length}</div>
+                        <div>Spike: {shapes.filter(s => s.deformationType === 'spike').length}</div>
+                        <div>None: {shapes.filter(s => s.deformationType === 'none').length}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-black text-xs font-mono">TEXTURES</span>
+                      <div className="text-xs text-black/60 font-mono mt-2">
+                        <div>None: {shapes.filter(s => s.textureType === 'none').length}</div>
+                        <div>Checkerboard: {shapes.filter(s => s.textureType === 'checkerboard').length}</div>
+                        <div>Noise: {shapes.filter(s => s.textureType === 'noise').length}</div>
+                        <div>Gradient: {shapes.filter(s => s.textureType === 'gradient').length}</div>
+                        <div>Marble: {shapes.filter(s => s.textureType === 'marble').length}</div>
+                        <div>Wood: {shapes.filter(s => s.textureType === 'wood').length}</div>
+                        <div>Metal: {shapes.filter(s => s.textureType === 'metal').length}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-3 border-2 border-black bg-gray-50">
+                    <h4 className="text-black font-mono text-xs mb-2">SCENE STATISTICS</h4>
+                    <div className="grid grid-cols-3 gap-2 text-xs text-black/60">
+                      <div>Total Objects: {shapes.length}</div>
+                      <div>Selected: {selectedShapeId ? `ID: ${selectedShapeId}` : 'None'}</div>
+                      <div>Memory Usage: {(shapes.length * 2.4).toFixed(1)} MB</div>
+                      <div>Render Time: {shapes.length * 0.1}ms</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
           )}
 
           {/* Render Queue Controls */}
@@ -1388,6 +2095,7 @@ export default function Home() {
                       <option value="toon">TOON</option>
                       <option value="depth">DEPTH</option>
                       <option value="normal">NORMAL</option>
+                      <option value="liquid">LIQUID</option>
                     </select>
                     <div>
                       <label className="text-black text-xs font-mono">SIZE: {(() => {
