@@ -303,6 +303,12 @@ function Shape({
   // Get material based on type
   const getMaterial = () => {
     let baseColor = color
+    
+    // Handle gradient colors by using the first color in the gradient
+    if (colorMode === 'gradient' && gradientColors && gradientColors.length > 0) {
+      baseColor = gradientColors[0]
+    }
+    
     if (colorShiftEnabled) {
       const hue = (Date.now() * 0.001 * (animationSpeed || 1)) % 1
       baseColor = `hsl(${hue * 360}, 70%, 50%)`
@@ -557,6 +563,125 @@ function Shape({
           {material}
           {selectionOutline}
         </Tetrahedron>
+      )
+    case 'crystal':
+      return (
+        <Box 
+          ref={meshRef}
+          position={position} 
+          args={[args[0] * 0.5, args[1] * 2, args[2] * 0.5]}
+          rotation={rotation}
+          scale={scale}
+          onClick={handleClick}
+          onPointerDown={handlePointerDown}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
+        >
+          {material}
+          {selectionOutline}
+        </Box>
+      )
+    case 'coral':
+      return (
+        <Sphere 
+          ref={meshRef}
+          position={position} 
+          args={[args[0] * 0.8, 16, 16]}
+          rotation={rotation}
+          scale={scale}
+          onClick={handleClick}
+          onPointerDown={handlePointerDown}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
+        >
+          {material}
+          {selectionOutline}
+        </Sphere>
+      )
+    case 'plant':
+      return (
+        <Cone 
+          ref={meshRef}
+          position={position} 
+          args={[args[0] * 0.3, args[1] * 2, 8]}
+          rotation={rotation}
+          scale={scale}
+          onClick={handleClick}
+          onPointerDown={handlePointerDown}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
+        >
+          {material}
+          {selectionOutline}
+        </Cone>
+      )
+    case 'cloud':
+      return (
+        <Sphere 
+          ref={meshRef}
+          position={position} 
+          args={[args[0] * 1.2, 32, 32]}
+          rotation={rotation}
+          scale={scale}
+          onClick={handleClick}
+          onPointerDown={handlePointerDown}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
+        >
+          {material}
+          {selectionOutline}
+        </Sphere>
+      )
+    case 'blob':
+      return (
+        <Sphere 
+          ref={meshRef}
+          position={position} 
+          args={[args[0] * 0.9, 32, 32]}
+          rotation={rotation}
+          scale={scale}
+          onClick={handleClick}
+          onPointerDown={handlePointerDown}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
+        >
+          {material}
+          {selectionOutline}
+        </Sphere>
+      )
+    case 'liquid':
+      return (
+        <Sphere 
+          ref={meshRef}
+          position={position} 
+          args={[args[0] * 1.1, 32, 32]}
+          rotation={rotation}
+          scale={scale}
+          onClick={handleClick}
+          onPointerDown={handlePointerDown}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
+        >
+          {material}
+          {selectionOutline}
+        </Sphere>
+      )
+    case 'organic':
+      return (
+        <Box 
+          ref={meshRef}
+          position={position} 
+          args={[args[0] * 0.7, args[1] * 1.3, args[2] * 0.7]}
+          rotation={rotation}
+          scale={scale}
+          onClick={handleClick}
+          onPointerDown={handlePointerDown}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
+        >
+          {material}
+          {selectionOutline}
+        </Box>
       )
     default:
       return null
@@ -1017,7 +1142,7 @@ export default function Home() {
                 <img 
                   src="/transparent-image(1).png" 
                   alt="FORMA" 
-                  className="h-8 w-auto"
+                  className="h-24 w-auto"
                 />
                 <div className="text-xs text-black/60 font-mono">SYS.REQ.009 // V.1.4.3</div>
               </div>
@@ -1915,6 +2040,7 @@ export default function Home() {
             {shapes.map((shape, index) => (
               <Shape 
                 key={shape.id} 
+                id={shape.id}
                 type={shape.type} 
                 position={shape.position} 
                 color={shape.color} 
@@ -1939,12 +2065,18 @@ export default function Home() {
                 scale={shape.scale}
                 materialType={shape.materialType}
                 textureType={shape.textureType}
+                textureScale={shape.textureScale || 1}
+                textureRotation={shape.textureRotation || 0}
+                liquidType={shape.liquidType || 'water'}
                 normalMapEnabled={shape.normalMapEnabled}
                 roughnessMapEnabled={shape.roughnessMapEnabled}
                 metalnessMapEnabled={shape.metalnessMapEnabled}
                 displacementMapEnabled={shape.displacementMapEnabled}
                 emissiveMapEnabled={shape.emissiveMapEnabled}
                 animationSpeed={animationSpeed}
+                textFont={shape.textFont || 'Arial'}
+                content={shape.content}
+                textContent={shape.textContent}
               />
             ))}
             <OrbitControls 
