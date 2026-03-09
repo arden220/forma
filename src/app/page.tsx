@@ -85,6 +85,109 @@ const generateTexture = (type: string, liquidTurbulence: number = 0.1, liquidOpa
   return new THREE.CanvasTexture(canvas)
 }
 
+// Liquid Material Generation
+const generateLiquidMaterial = (type: string, liquidColor: string = '#0066cc', liquidOpacity: number = 0.8, liquidReflection: number = 0.2, liquidRefraction: number = 1.3) => {
+  const liquidProps: any = {
+    color: liquidColor,
+    metalness: 0.3,
+    roughness: 0.1,
+    transparent: true,
+    opacity: liquidOpacity,
+    envMapIntensity: liquidReflection,
+    refractionRatio: liquidRefraction,
+    transmission: 1 - liquidOpacity * 0.5
+  }
+  
+  switch (type) {
+    case 'water':
+      return (
+        <meshPhysicalMaterial 
+          {...liquidProps}
+          clearcoat={0.1}
+          clearcoatRoughness={0.05}
+          ior={1.333}
+          attenuationDistance={10}
+          attenuationColor={liquidColor}
+        />
+      )
+    case 'honey':
+      return (
+        <meshPhysicalMaterial 
+          {...liquidProps}
+          color="#d4a374"
+          clearcoat={0.8}
+          clearcoatRoughness={0.2}
+          ior={1.5}
+          sheen={0.5}
+          sheenColor="#f4e4c1"
+        />
+      )
+    case 'lava':
+      return (
+        <meshPhysicalMaterial 
+          {...liquidProps}
+          color="#ff4500"
+          emissive="#ff6600"
+          emissiveIntensity={0.8}
+          clearcoat={0.2}
+          ior={1.5}
+          attenuationDistance={5}
+          attenuationColor="#ff8800"
+        />
+      )
+    case 'acid':
+      return (
+        <meshPhysicalMaterial 
+          {...liquidProps}
+          color="#00ff00"
+          emissive="#00ff00"
+          emissiveIntensity={0.3}
+          ior={1.38}
+        />
+      )
+    case 'mercury':
+      return (
+        <meshPhysicalMaterial 
+          {...liquidProps}
+          color="#c0c0c0"
+          metalness={0.9}
+          roughness={0.05}
+          clearcoat={0.9}
+          clearcoatRoughness={0.01}
+          ior={1.62}
+          reflectivity={0.8}
+        />
+      )
+    case 'oil':
+      return (
+        <meshPhysicalMaterial 
+          {...liquidProps}
+          color="#1a1a1a"
+          metalness={0.1}
+          roughness={0.3}
+          clearcoat={0.1}
+          clearcoatRoughness={0.4}
+          ior={1.47}
+        />
+      )
+    case 'plasma':
+      return (
+        <meshPhysicalMaterial 
+          {...liquidProps}
+          color="#ff00ff"
+          emissive="#00ffff"
+          emissiveIntensity={1.0}
+          metalness={0.8}
+          roughness={0.1}
+          clearcoat={0.3}
+          clearcoatRoughness={0.1}
+        />
+      )
+    default:
+      return <meshStandardMaterial {...liquidProps} />
+  }
+}
+
 interface Shape {
   id: number
   type: string
@@ -109,6 +212,9 @@ interface Shape {
   scale: [number, number, number]
   materialType: string
   textureType: string
+  textureScale: number
+  textureRotation: number
+  liquidType: string
   normalMapEnabled: boolean
   roughnessMapEnabled: boolean
   metalnessMapEnabled: boolean
@@ -116,6 +222,8 @@ interface Shape {
   emissiveMapEnabled: boolean
   animationSpeed: number
   content?: string
+  textContent?: string
+  textFont?: string
   font?: string
   mode?: string
   exportable?: boolean
@@ -147,12 +255,18 @@ function Shape({
   scale,
   materialType,
   textureType,
+  textureScale,
+  textureRotation,
+  liquidType,
   normalMapEnabled,
   roughnessMapEnabled,
   metalnessMapEnabled,
   displacementMapEnabled,
   emissiveMapEnabled,
-  animationSpeed
+  animationSpeed,
+  textFont,
+  content,
+  textContent
 }: Shape) {
   const meshRef = useRef<any>(null)
   const [hovered, setHovered] = useState(false)
@@ -669,178 +783,6 @@ export default function Home() {
     'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Playfair Display',
     'Raleway', 'Ubuntu', 'Oswald', 'Merriweather', 'Nunito', 'Dancing Script'
   ]
-
-  // Texture Generation Functions
-  const generateTexture = (type: string) => {
-    const canvas = document.createElement('canvas')
-    canvas.width = 256
-    canvas.height = 256
-    const ctx = canvas.getContext('2d')!
-    
-    switch (type) {
-      case 'checkerboard':
-        const size = 32
-        for (let i = 0; i < 8; i++) {
-          for (let j = 0; j < 8; j++) {
-            ctx.fillStyle = (i + j) % 2 === 0 ? '#ffffff' : '#000000'
-            ctx.fillRect(i * size, j * size, size, size)
-          }
-        }
-        break
-      case 'noise':
-        const imageData = ctx.createImageData(256, 256)
-        for (let i = 0; i < imageData.data.length; i += 4) {
-          const value = Math.random() * 255
-          imageData.data[i] = value
-          imageData.data[i + 1] = value
-          imageData.data[i + 2] = value
-          imageData.data[i + 3] = 255
-        }
-        ctx.putImageData(imageData, 0, 0)
-        break
-      case 'gradient':
-        const gradient = ctx.createLinearGradient(0, 0, 256, 256)
-        gradient.addColorStop(0, '#ffffff')
-        gradient.addColorStop(0.5, '#808080')
-        gradient.addColorStop(1, '#000000')
-        ctx.fillStyle = gradient
-        ctx.fillRect(0, 0, 256, 256)
-        break
-      case 'marble':
-        for (let i = 0; i < 256; i++) {
-          for (let j = 0; j < 256; j++) {
-            const value = Math.sin(i * 0.1) * 50 + Math.sin(j * 0.1) * 50 + 128
-            ctx.fillStyle = `rgb(${value}, ${value}, ${value})`
-            ctx.fillRect(i, j, 1, 1)
-          }
-        }
-        break
-      case 'wood':
-        for (let i = 0; i < 256; i++) {
-          const value = Math.sin(i * 0.05) * 30 + Math.random() * 20 + 100
-          ctx.fillStyle = `rgb(${value}, ${value * 0.7}, ${value * 0.3})`
-          ctx.fillRect(0, i, 256, 1)
-        }
-        break
-      case 'metal':
-        const metalGradient = ctx.createLinearGradient(0, 0, 0, 256)
-        metalGradient.addColorStop(0, '#e0e0e0')
-        metalGradient.addColorStop(0.5, '#a0a0a0')
-        metalGradient.addColorStop(1, '#606060')
-        ctx.fillStyle = metalGradient
-        ctx.fillRect(0, 0, 256, 256)
-        break
-      case 'liquid':
-        // Generate liquid texture with animated waves
-        const time = Date.now() * 0.001
-        for (let i = 0; i < 256; i++) {
-          for (let j = 0; j < 256; j++) {
-            const wave1 = Math.sin((i * 0.02) + time) * liquidTurbulence
-            const wave2 = Math.cos((j * 0.02) + time) * liquidTurbulence
-            const value = Math.sin(wave1 + wave2) * 127 + 128
-            const alpha = liquidOpacity
-            ctx.fillStyle = `${liquidColor}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`
-            ctx.fillRect(i, j, 1, 1)
-          }
-        }
-        break
-    }
-    
-    return new THREE.CanvasTexture(canvas)
-  }
-
-  // Liquid Material Generation
-  const generateLiquidMaterial = (type: string) => {
-    const liquidProps: any = {
-      color: liquidColor,
-      metalness: 0.3,
-      roughness: 0.1,
-      transparent: true,
-      opacity: liquidOpacity,
-      envMapIntensity: liquidReflection,
-      refractionRatio: liquidRefraction,
-      transmission: 1 - liquidOpacity * 0.5
-    }
-    
-    switch (type) {
-      case 'water':
-        return (
-          <meshPhysicalMaterial 
-            {...liquidProps}
-            clearcoat={0.1}
-            clearcoatRoughness={0.05}
-            ior={1.333}
-            attenuationDistance={10}
-            attenuationColor={liquidColor}
-          />
-        )
-      case 'honey':
-        return (
-          <meshPhysicalMaterial 
-            {...liquidProps}
-            color="#d4a374"
-            clearcoat={0.8}
-            clearcoatRoughness={0.2}
-            ior={1.5}
-            sheen={0.5}
-            sheenColor="#f4e4c1"
-          />
-        )
-      case 'lava':
-        return (
-          <meshPhysicalMaterial 
-            {...liquidProps}
-            color="#ff4500"
-            emissive="#ff6600"
-            emissiveIntensity={0.8}
-            clearcoat={0.2}
-            ior={1.5}
-            attenuationDistance={5}
-            attenuationColor="#ff8800"
-          />
-        )
-      case 'mercury':
-        return (
-          <meshPhysicalMaterial 
-            {...liquidProps}
-            color="#c0c0c0"
-            metalness={0.9}
-            roughness={0.05}
-            clearcoat={0.9}
-            clearcoatRoughness={0.01}
-            ior={1.62}
-            reflectivity={0.8}
-          />
-        )
-      case 'oil':
-        return (
-          <meshPhysicalMaterial 
-            {...liquidProps}
-            color="#1a1a1a"
-            metalness={0.1}
-            roughness={0.3}
-            clearcoat={0.1}
-            clearcoatRoughness={0.4}
-            ior={1.47}
-          />
-        )
-      case 'plasma':
-        return (
-          <meshPhysicalMaterial 
-            {...liquidProps}
-            color="#ff00ff"
-            emissive="#00ffff"
-            emissiveIntensity={1.0}
-            metalness={0.8}
-            roughness={0.1}
-            clearcoat={0.3}
-            clearcoatRoughness={0.1}
-          />
-        )
-      default:
-        return <meshStandardMaterial {...liquidProps} />
-    }
-  }
 
   const sidebarItems = [
     { id: 'directory', label: 'ROOT_DIRECTORY', icon: '[01]' },
