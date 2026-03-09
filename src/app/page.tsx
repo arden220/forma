@@ -6,6 +6,85 @@ import { useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import * as stdlib from 'three-stdlib'
 
+// Texture Generation Functions
+const generateTexture = (type: string, liquidTurbulence: number = 0.1, liquidOpacity: number = 0.8, liquidColor: string = '#0066cc') => {
+  const canvas = document.createElement('canvas')
+  canvas.width = 256
+  canvas.height = 256
+  const ctx = canvas.getContext('2d')!
+  
+  switch (type) {
+    case 'checkerboard':
+      const size = 32
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          ctx.fillStyle = (i + j) % 2 === 0 ? '#ffffff' : '#000000'
+          ctx.fillRect(i * size, j * size, size, size)
+        }
+      }
+      break
+    case 'noise':
+      const imageData = ctx.createImageData(256, 256)
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        const value = Math.random() * 255
+        imageData.data[i] = value
+        imageData.data[i + 1] = value
+        imageData.data[i + 2] = value
+        imageData.data[i + 3] = 255
+      }
+      ctx.putImageData(imageData, 0, 0)
+      break
+    case 'gradient':
+      const gradient = ctx.createLinearGradient(0, 0, 256, 256)
+      gradient.addColorStop(0, '#ffffff')
+      gradient.addColorStop(0.5, '#808080')
+      gradient.addColorStop(1, '#000000')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, 256, 256)
+      break
+    case 'marble':
+      for (let i = 0; i < 256; i++) {
+        for (let j = 0; j < 256; j++) {
+          const value = Math.sin(i * 0.1) * 50 + Math.sin(j * 0.1) * 50 + 128
+          ctx.fillStyle = `rgb(${value}, ${value}, ${value})`
+          ctx.fillRect(i, j, 1, 1)
+        }
+      }
+      break
+    case 'wood':
+      for (let i = 0; i < 256; i++) {
+        const value = Math.sin(i * 0.05) * 30 + Math.random() * 20 + 100
+        ctx.fillStyle = `rgb(${value}, ${value * 0.7}, ${value * 0.3})`
+        ctx.fillRect(0, i, 256, 1)
+      }
+      break
+    case 'metal':
+      const metalGradient = ctx.createLinearGradient(0, 0, 0, 256)
+      metalGradient.addColorStop(0, '#e0e0e0')
+      metalGradient.addColorStop(0.5, '#a0a0a0')
+      metalGradient.addColorStop(1, '#606060')
+      ctx.fillStyle = metalGradient
+      ctx.fillRect(0, 0, 256, 256)
+      break
+    case 'liquid':
+      // Generate liquid texture with animated waves
+      const time = Date.now() * 0.001
+      for (let i = 0; i < 256; i++) {
+        for (let j = 0; j < 256; j++) {
+          const wave1 = Math.sin((i * 0.02) + time) * liquidTurbulence
+          const wave2 = Math.cos((j * 0.02) + time) * liquidTurbulence
+          const value = Math.sin(wave1 + wave2) * 127 + 128
+          const alpha = liquidOpacity
+          ctx.fillStyle = `${liquidColor}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`
+          ctx.fillRect(i, j, 1, 1)
+        }
+      }
+      break
+  }
+  
+  return new THREE.CanvasTexture(canvas)
+}
+
 interface Shape {
   id: number
   type: string
