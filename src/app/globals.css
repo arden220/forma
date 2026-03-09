@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #000000;
+  --accent: #000000;
+  --border: #000000;
+  --font-script: var(--font-petit-formal-script);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.brutalist-border {
+  border: 2px solid var(--border);
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.font-pixel-square {
+  font-family: var(--font-geist-pixel-square), monospace;
+}
+
+.font-script {
+  font-family: var(--font-petit-formal-script), cursive;
+}
+
+.scanlines {
+  position: relative;
+}
+
+.scanlines::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.03) 2px,
+    rgba(255, 255, 255, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+.glitch {
+  position: relative;
+  animation: glitch 2s infinite;
+}
+
+@keyframes glitch {
+  0%, 100% { text-shadow: 2px 0 red, -2px 0 cyan; }
+  25% { text-shadow: -2px 0 red, 2px 0 cyan; }
+  50% { text-shadow: 2px 0 cyan, -2px 0 red; }
+  75% { text-shadow: -2px 0 cyan, 2px 0 red; }
+}
+
+.grainy-texture {
+  position: relative;
+}
+
+.grainy-texture::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 1px, rgba(255,255,255,.03) 1px, rgba(255,255,255,.03) 2px),
+    repeating-linear-gradient(-45deg, transparent, transparent 1px, rgba(255,255,255,.02) 1px, rgba(255,255,255,.02) 2px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.optical-illusion {
+  background: 
+    radial-gradient(ellipse at center, 
+      #000 0%, #000 20%, 
+      #fff 20%, #fff 25%, 
+      #000 25%, #000 35%, 
+      #fff 35%, #fff 40%, 
+      #000 40%, #000 50%, 
+      #fff 50%, #fff 55%, 
+      #000 55%, #000 65%, 
+      #fff 65%, #fff 70%, 
+      #000 70%, #000 80%, 
+      #fff 80%, #fff 85%, 
+      #000 85%, #000 95%, 
+      #fff 95%, #fff 100%
+    );
+  background-size: 200px 200px;
+  animation: rotate 60s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slide-in-up {
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.8s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.8s ease-out forwards;
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.8s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 1s ease-out forwards;
+}
+
+.writing-mode-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
