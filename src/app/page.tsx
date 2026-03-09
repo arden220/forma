@@ -266,7 +266,9 @@ function Shape({
   animationSpeed,
   textFont,
   content,
-  textContent
+  textContent,
+  colorMode,
+  gradientColors
 }: Shape) {
   const meshRef = useRef<any>(null)
   const [hovered, setHovered] = useState(false)
@@ -566,10 +568,9 @@ function Shape({
       )
     case 'crystal':
       return (
-        <Box 
+        <mesh 
           ref={meshRef}
           position={position} 
-          args={[args[0] * 0.5, args[1] * 2, args[2] * 0.5]}
           rotation={rotation}
           scale={scale}
           onClick={handleClick}
@@ -577,16 +578,27 @@ function Shape({
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
-          {material}
+          {/* Crystal made of multiple boxes */}
+          <Box args={[args[0] * 0.3, args[1] * 1.5, args[2] * 0.3]} position={[0, args[1] * 0.5, 0]}>
+            {material}
+          </Box>
+          <Box args={[args[0] * 0.2, args[1] * 1, args[2] * 0.2]} position={[0, -args[1] * 0.3, 0]}>
+            {material}
+          </Box>
+          <Box args={[args[0] * 0.15, args[1] * 0.8, args[2] * 0.15]} position={[args[0] * 0.2, 0, 0]}>
+            {material}
+          </Box>
+          <Box args={[args[0] * 0.15, args[1] * 0.8, args[2] * 0.15]} position={[-args[0] * 0.2, 0, 0]}>
+            {material}
+          </Box>
           {selectionOutline}
-        </Box>
+        </mesh>
       )
     case 'coral':
       return (
-        <Sphere 
+        <mesh 
           ref={meshRef}
           position={position} 
-          args={[args[0] * 0.8, 16, 16]}
           rotation={rotation}
           scale={scale}
           onClick={handleClick}
@@ -594,16 +606,30 @@ function Shape({
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
-          {material}
+          {/* Coral made of multiple spheres and cylinders */}
+          <Sphere args={[args[0] * 0.4, 16, 16]} position={[0, 0, 0]}>
+            {material}
+          </Sphere>
+          <Sphere args={[args[0] * 0.3, 12, 12]} position={[args[0] * 0.3, args[0] * 0.2, 0]}>
+            {material}
+          </Sphere>
+          <Sphere args={[args[0] * 0.25, 10, 10]} position={[-args[0] * 0.3, args[0] * 0.15, 0]}>
+            {material}
+          </Sphere>
+          <Cylinder args={[args[0] * 0.08, args[1] * 0.6, 8]} position={[0, -args[0] * 0.3, 0]} rotation={[0, 0, Math.PI / 2]}>
+            {material}
+          </Cylinder>
+          <Cylinder args={[args[0] * 0.06, args[1] * 0.4, 6]} position={[args[0] * 0.2, -args[0] * 0.2, 0]} rotation={[0, 0, Math.PI / 3]}>
+            {material}
+          </Cylinder>
           {selectionOutline}
-        </Sphere>
+        </mesh>
       )
     case 'plant':
       return (
-        <Cone 
+        <mesh 
           ref={meshRef}
           position={position} 
-          args={[args[0] * 0.3, args[1] * 2, 8]}
           rotation={rotation}
           scale={scale}
           onClick={handleClick}
@@ -611,16 +637,30 @@ function Shape({
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
-          {material}
+          {/* Plant made of multiple cones and cylinders */}
+          <Cone args={[args[0] * 0.15, args[1] * 0.8, 8]} position={[0, args[1] * 0.8, 0]}>
+            {material}
+          </Cone>
+          <Cylinder args={[args[0] * 0.04, args[1] * 0.6, 8]} position={[0, args[1] * 0.4, 0]}>
+            {material}
+          </Cylinder>
+          <Cone args={[args[0] * 0.12, args[1] * 0.6, 6]} position={[args[0] * 0.2, args[1] * 1.2, 0]} rotation={[0, 0, Math.PI / 6]}>
+            {material}
+          </Cone>
+          <Cone args={[args[0] * 0.1, args[1] * 0.5, 5]} position={[-args[0] * 0.15, args[1] * 1.1, 0]} rotation={[0, 0, -Math.PI / 6]}>
+            {material}
+          </Cone>
+          <Cylinder args={[args[0] * 0.03, args[1] * 0.4, 6]} position={[-args[0] * 0.1, args[1] * 0.8, 0]}>
+            {material}
+          </Cylinder>
           {selectionOutline}
-        </Cone>
+        </mesh>
       )
     case 'cloud':
       return (
-        <Sphere 
+        <mesh 
           ref={meshRef}
           position={position} 
-          args={[args[0] * 1.2, 32, 32]}
           rotation={rotation}
           scale={scale}
           onClick={handleClick}
@@ -628,16 +668,30 @@ function Shape({
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
-          {material}
+          {/* Cloud made of multiple overlapping spheres */}
+          <Sphere args={[args[0] * 0.8, 20, 20]} position={[0, 0, 0]}>
+            {material}
+          </Sphere>
+          <Sphere args={[args[0] * 0.6, 18, 18]} position={[args[0] * 0.4, args[0] * 0.1, 0]}>
+            {material}
+          </Sphere>
+          <Sphere args={[args[0] * 0.7, 22, 22]} position={[-args[0] * 0.3, args[0] * 0.05, 0]}>
+            {material}
+          </Sphere>
+          <Sphere args={[args[0] * 0.5, 16, 16]} position={[args[0] * 0.2, -args[0] * 0.1, 0]}>
+            {material}
+          </Sphere>
+          <Sphere args={[args[0] * 0.4, 14, 14]} position={[-args[0] * 0.2, -args[0] * 0.05, 0]}>
+            {material}
+          </Sphere>
           {selectionOutline}
-        </Sphere>
+        </mesh>
       )
     case 'blob':
       return (
-        <Sphere 
+        <mesh 
           ref={meshRef}
           position={position} 
-          args={[args[0] * 0.9, 32, 32]}
           rotation={rotation}
           scale={scale}
           onClick={handleClick}
@@ -645,16 +699,30 @@ function Shape({
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
-          {material}
+          {/* Blob made of multiple spheres of different sizes */}
+          <Sphere args={[args[0] * 0.7, 24, 24]} position={[0, 0, 0]}>
+            {material}
+          </Sphere>
+          <Sphere args={[args[0] * 0.5, 18, 18]} position={[args[0] * 0.3, args[0] * 0.2, 0]}>
+            {material}
+          </Sphere>
+          <Sphere args={[args[0] * 0.4, 16, 16]} position={[-args[0] * 0.2, args[0] * 0.1, 0]}>
+            {material}
+          </Sphere>
+          <Sphere args={[args[0] * 0.3, 12, 12]} position={[0, -args[0] * 0.25, 0]}>
+            {material}
+          </Sphere>
+          <Sphere args={[args[0] * 0.35, 14, 14]} position={[-args[0] * 0.15, -args[0] * 0.2, 0]}>
+            {material}
+          </Sphere>
           {selectionOutline}
-        </Sphere>
+        </mesh>
       )
     case 'liquid':
       return (
-        <Sphere 
+        <mesh 
           ref={meshRef}
           position={position} 
-          args={[args[0] * 1.1, 32, 32]}
           rotation={rotation}
           scale={scale}
           onClick={handleClick}
@@ -662,16 +730,27 @@ function Shape({
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
-          {material}
+          {/* Liquid made of a flattened sphere with ripples */}
+          <Sphere args={[args[0] * 0.8, 20, 8]} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            {material}
+          </Sphere>
+          <Torus args={[args[0] * 0.6, args[0] * 0.15, 16]} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            {material}
+          </Torus>
+          <Torus args={[args[0] * 0.4, args[0] * 0.1, 12]} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            {material}
+          </Torus>
+          <Sphere args={[args[0] * 0.3, 10, 10]} position={[args[0] * 0.2, args[0] * 0.05, args[0] * 0.3]}>
+            {material}
+          </Sphere>
           {selectionOutline}
-        </Sphere>
+        </mesh>
       )
     case 'organic':
       return (
-        <Box 
+        <mesh 
           ref={meshRef}
           position={position} 
-          args={[args[0] * 0.7, args[1] * 1.3, args[2] * 0.7]}
           rotation={rotation}
           scale={scale}
           onClick={handleClick}
@@ -679,9 +758,24 @@ function Shape({
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
-          {material}
+          {/* Organic made of mixed geometries */}
+          <Box args={[args[0] * 0.4, args[1] * 0.8, args[2] * 0.4]} position={[0, 0, 0]}>
+            {material}
+          </Box>
+          <Sphere args={[args[0] * 0.3, 16, 16]} position={[args[0] * 0.25, args[0] * 0.2, 0]}>
+            {material}
+          </Sphere>
+          <Cone args={[args[0] * 0.2, args[1] * 0.6, 8]} position={[-args[0] * 0.2, 0, 0]}>
+            {material}
+          </Cone>
+          <Sphere args={[args[0] * 0.25, 12, 12]} position={[0, -args[0] * 0.3, args[0] * 0.1]}>
+            {material}
+          </Sphere>
+          <Box args={[args[0] * 0.15, args[1] * 0.5, args[2] * 0.15]} position={[args[0] * 0.15, -args[0] * 0.1, 0]}>
+            {material}
+          </Box>
           {selectionOutline}
-        </Box>
+        </mesh>
       )
     default:
       return null
@@ -2428,7 +2522,7 @@ export default function Home() {
         </div>
 
         {/* Bottom Execute Button */}
-        <div className="absolute right-8 bottom-8 z-20">
+        <div className="absolute right-8 bottom-32 z-20">
           <button
             className="border-4 border-black bg-white text-black px-12 py-6 font-mono text-lg font-bold hover:bg-black hover:text-white transition-all hover:scale-105 active:scale-95"
           >
