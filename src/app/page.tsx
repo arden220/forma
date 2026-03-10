@@ -397,7 +397,7 @@ function Shape({
           anchorX="center"
           anchorY="middle"
         >
-          {textContent}
+          {content || textContent || 'FORMA'}
         </Text>
       )
     }
@@ -1084,12 +1084,34 @@ export default function Home() {
       id: Date.now(),
       type: 'text',
       content: textContent,
-      font: textFont,
+      textFont: textFont,
       size: textSize,
       color: textColor,
       position: [...textPosition] as [number, number, number],
       rotation: [...textRotation] as [number, number, number],
-      mode: textMode
+      scale: [1, 1, 1] as [number, number, number],
+      mode: textMode,
+      wireframe: false,
+      metalness: 0.5,
+      roughness: 0.5,
+      deformationType: 'none',
+      deformationStrength: 0,
+      effectType: 'none',
+      effectIntensity: 0,
+      animationEnabled: false,
+      materialType: 'standard',
+      textureType: 'none',
+      textureScale: 1,
+      textureRotation: 0,
+      liquidType: 'water',
+      normalMapEnabled: false,
+      roughnessMapEnabled: false,
+      metalnessMapEnabled: false,
+      displacementMapEnabled: false,
+      emissiveMapEnabled: false,
+      colorMode: 'solid',
+      gradientColors: ['#ffffff'],
+      gradientType: 'linear'
     }
     setShapes([...shapes, newText])
   }
